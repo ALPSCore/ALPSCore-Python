@@ -1,70 +1,50 @@
-#
-# global cmake configuration file for ALPSCore
-#
+# 
+# alps-python cmake configuration script.
+# 
 
 cmake_minimum_required (VERSION 2.8)
 
-# add includes and libs for each module
-macro(alps_add_module module module_path)
-    set(${module}_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/${module_path}/include ${CMAKE_BINARY_DIR}/${module_path}/include)
-    set(${module}_LIBRARIES ${module})
-endmacro(alps_add_module)
+# define project name
+project (alps-python CXX)
+message ("\nALPSCore module : ${PROJECT_NAME}\n")
 
-# include cmake scripts from common/cmake directory
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/./common/cmake)
+# add common modules from ../common/cmake
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../common/cmake)
 
-# check that compiler version is OK.
-include(ALPSCompilerVersionCheck)
+# add common definitions
+include(ALPSCommonModuleDefinitions)
 
-# ALPS_GLOBAL_BUILD means building project all at once
-set(ALPS_GLOBAL_BUILD true)
+# configurable option
+option(ENABLE_PYTHON "Enable Python libraries" ON)
 
-if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-    message(FATAL_ERROR "In source builds are disabled. Please use a separate build directory")
-endif()
+if (NOT DocumentationOnly AND ENABLE_PYTHON)
+  include(ALPSEnableMPI)
 
-# Documentation
-option(DocumentationOnly "Build only documentation, no code or tests" OFF)
-mark_as_advanced(DocumentationOnly)
+  find_package(Python)
+  if (NOT PYTHON_FOUND)
+    message(FATAL_ERROR " Python libraries not found")
+  endif (NOT PYTHON_FOUND)
 
-option(Documentation "Build documentation" ON)
-if (DocumentationOnly)
-  set(Documentation ON)
-endif (DocumentationOnly)
+  # Boost
+  #set(Boost_USE_STATIC_LIBS        ON)
+  #set(Boost_USE_STATIC_RUNTIME    OFF)
+  set(BOOST_LIBRARY_LIST chrono program_options filesystem system)
+  if(ENABLE_MPI)
+    list(APPEND BOOST_LIBRARY_LIST mpi)
+  endif(ENABLE_MPI)
+  if(ENABLE_PYTHON)
+    list(APPEND BOOST_LIBRARY_LIST python)
+  endif(ENABLE_PYTHON)
+  add_boost(${BOOST_LIBRARY_LIST})
 
-set(_am_building_documentation ${Documentation})
-if (Documentation)
-    message(STATUS "Enable build of documentation")
-    set(Documentation OFF) # not to spawn make doc jobs for each module
-endif(Documentation)
+  add_hdf5()
+  add_alps_package(alps-utilities alps-hdf5 alps-params alps-accumulators alps-mc)
 
-# enable Testing
-option(Testing "Enable testing" ON)
-option(ExtensiveTesting "Enable extensive testing, including time consuming tests" OFF)
-mark_as_advanced(ExtensiveTesting)
-if (Testing AND NOT DocumentationOnly)
-    enable_testing()
-    include(ALPSEnableTests) #defined in common/cmake
-endif(Testing AND NOT DocumentationOnly)
+  add_this_package()
 
-# each module is defined as a cmake project in a subdirectory
-add_subdirectory(utilities)
-alps_add_module(alps-utilities utilities)
-add_subdirectory(hdf5)
-alps_add_module(alps-hdf5 hdf5)
-add_subdirectory(accumulators)
-alps_add_module(alps-accumulators accumulators)
-add_subdirectory(params)
-alps_add_module(alps-params params)
-add_subdirectory(mc)
-alps_add_module(alps-mc mc)
+  add_testing()
 
-if(_am_building_documentation)
-    set(DOXYFILE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/common/doc")
-    message(STATUS "Building documentation for sources in ${DOXYFILE_EXTRA_SOURCES}")  
-    set(DOXYFILE_IN "${CMAKE_SOURCE_DIR}/common/doc/Doxyfile.in") 
-    set(CMAKE_PROJECT_NAME "ALPSCore reference") # to provide name for the documentation 
-    include(UseDoxygen)
-    unset(CMAKE_PROJECT_NAME)
-endif(_am_building_documentation)
-# unset(_am_building_documentation CACHE)
+  gen_pkg_config()
+
+endif (NOT DocumentationOnly AND ENABLE_PYTHON)
+gen_documentation()
