@@ -9,7 +9,7 @@
 #include <alps/utilities/type_wrapper.hpp>
 #include "alps/python/utilities/import_numpy.hpp"
 #include "alps/python/utilities/get_numpy_type.hpp"
-#include "alps/python/utilities/extract_from_pyobject.hpp"
+#include "alps/python/hdf5/detail/extract_from_pyobject.hpp"
 
 #include <boost/python/numeric.hpp>
 #include <numpy/arrayobject.h>
