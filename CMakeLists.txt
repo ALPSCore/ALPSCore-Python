@@ -61,6 +61,7 @@ function(make_python_module name)
 endfunction()
 
 add_subdirectory(hdf5)
+add_subdirectory(mc)
 
 # set (libs_ "")
 # foreach (name    
