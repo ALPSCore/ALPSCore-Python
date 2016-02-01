@@ -14,8 +14,8 @@
 #include <alps/hdf5/vector.hpp>
 #include <alps/hdf5/complex.hpp>
 
-#include "alps/python/hdf5/hdf5.hpp"
-#include "alps/python/hdf5/hdf5.ipp"
+#include "./hdf5.hpp"
+#include "./hdf5.ipp"
 
 #include "alps/python/utilities/get_numpy_type.ipp"
 

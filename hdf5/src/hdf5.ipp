@@ -4,12 +4,12 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
  
-#include <alps/python/hdf5/hdf5.hpp>
+#include "./hdf5.hpp"
 
 #include <alps/utilities/type_wrapper.hpp>
 #include "alps/python/utilities/import_numpy.hpp"
 #include "alps/python/utilities/get_numpy_type.hpp"
-#include "alps/python/hdf5/detail/extract_from_pyobject.hpp"
+#include "./detail/extract_from_pyobject.hpp"
 
 #include <boost/python/numeric.hpp>
 #include <numpy/arrayobject.h>
