@@ -18,6 +18,8 @@ include(ALPSCommonModuleDefinitions)
 
 # search for python
 find_package(PythonLibs REQUIRED)
+# NOTE: we need Python, but not necessarily the same version as the libraries (as of now!)
+find_package(PythonInterp REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 # find numpy
@@ -34,10 +36,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+# This macro is to be used in CMake subdirs!
+# Sets up building a C-Python module
+# Adds the target to the **PARENT**-scoped variable python_c_targets
+# (that is, modifies the variable in the parent directory scope!)
 # arguments: name sources...
-function(make_python_module name)
-  # message(STATUS "DEBUG: CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR} CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
-
+macro(make_python_module name)
   gen_documentation()
   if (DocumentationOnly)
     return()
@@ -48,53 +52,24 @@ function(make_python_module name)
   foreach(src_    ${name}.cpp ${ARGN})
     list(APPEND srcs_ src/${src_})
   endforeach()
-  # message(STATUS "DEBUG: List of sources: ${srcs_}")
+  # C library implementing the module: 
   add_library(${target_} MODULE ${srcs_} ${CMAKE_SOURCE_DIR}/utilities/src/import_numpy.cpp)
   target_include_directories(${target_} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/  ${CMAKE_SOURCE_DIR}/utilities/include/ )
   set_target_properties(${name}_c PROPERTIES PREFIX "")
   target_link_libraries(${target_} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} ${ALPSCore_LIBRARIES})
-  install(TARGETS ${target_} 
-          EXPORT ${PROJECT_NAME}
-          DESTINATION python
-          # INCLUDES DESTINATION include
-         )
-endfunction()
+  list(APPEND python_c_targets ${target_})
+  set(python_c_targets ${python_c_targets} PARENT_SCOPE)
+endmacro()
 
+set(python_c_targets "")
 add_subdirectory(hdf5)
 add_subdirectory(mc)
 
-# set (libs_ "")
-# foreach (name    
-#         pyrandom01 
-# 	pyhdf5
-# 	api
-# 	pymcbase)
-    
-#     add_library(${name}_c MODULE src/${name}.cpp src/import_numpy.cpp)
-#     list(APPEND libs_ ${name}_c)
+add_subdirectory(python)
 
-#     target_compile_definitions(${name}_c PUBLIC "${ALPS_SHARED_CPPFLAGS}") # FIXME: public or private?
 
-#     set_target_properties(${name}_c PROPERTIES PREFIX "")
-#     target_link_libraries(${name}_c ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} ${ALPSCore_LIBRARIES})
+#install(EXPORT ${PROJECT_NAME} NAMESPACE alps-python:: DESTINATION share/${PROJECT_NAME})
 
-#     install(TARGETS ${name}_c 
-#             EXPORT ${PROJECT_NAME}
-#             DESTINATION python
-#             INCLUDES DESTINATION include)
-# endforeach(name)
-install(EXPORT ${PROJECT_NAME} NAMESPACE alps-python:: DESTINATION share/${PROJECT_NAME})
-
-# FIXME: modify this code (transplanted from ALPSCommonModuleDefinitions.cmake) to make it work:
-# set(tgt_list_ "")
-# foreach(tgt_ ${ARGV})
-#     list(APPEND tgt_list_ "alps::${tgt_}")
-# endforeach()
-# if (tgt_list_)
-#     gen_cfg_module(DEPENDS ${${PROJECT_NAME}_DEPENDS} EXPORTS ${tgt_list_})
-# else()
-#     gen_cfg_module(DEPENDS ${${PROJECT_NAME}_DEPENDS})
-# endif()
 
 
 #add_testing()
