@@ -4,10 +4,23 @@ from distutils.core import setup
 setup(name='ALPSCore-Python',
       version='0.1',
       description='Python bindings for ALPSCore',
+      long_description='Python bindings for ALPSCore with precompiled shared object files.',
       maintainer='Alexander Gaenko',
       maintainer_email='galexv@umich.edu',
       url='https://github.com/ALPSCore/ALPSCore-Python',
-      license='GPL v2',
+      license='GNU General Public License v2 (GPLv2)',
+      # platforms = '${platform}',
+      classifiers = [
+          'Development Status :: 3 - Alpha',
+          'Environment :: Console',
+          'Intended Audience :: Science/Research',
+          'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
+          'Operating System :: POSIX',
+          'Programming Language :: C++',
+          'Programming Language :: Python :: 2',
+          'Topic :: Scientific/Engineering :: Physics',
+          'Topic :: Software Development :: Libraries'],
+          
       package_data={'alps.alps_c': ['*${CMAKE_SHARED_LIBRARY_SUFFIX}']},
       packages=['alps','alps.alps_c'])
 
