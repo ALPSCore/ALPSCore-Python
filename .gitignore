@@ -1,5 +1,4 @@
 *~
 *.pyc
-target/
-build.tmp/
+__pycache__/
 .DS_Store
