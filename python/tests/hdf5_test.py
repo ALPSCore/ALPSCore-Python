@@ -9,14 +9,14 @@ import os
 
 import pytest
 
-def check_scalar(ar,name,vtype,val):
+def check_scalar(ar,name,vtype,expected_val):
     ext=ar.extent(name)
-    assert len(ext)==1, ("Invalid extent length for scalar \"%s\"" % name)
-    assert ext[0]==1, ("Invalid extent value for scalar \"%s\"" % name)
+    assert len(ext)==1 #, ("Invalid extent length for scalar \"%s\"" % name)
+    assert ext[0]==1 #, ("Invalid extent value for scalar \"%s\"" % name)
     x = ar[name]
-    xt = type(x)
-    assert xt==vtype, ("Invalid type for scalar \"%s\": %s" % (name,str(xt)))
-    assert x==val, ("Invalid value for scalar \"%s\"" % name)
+    xtype = type(x)
+    assert xtype==vtype #, ("Invalid type for scalar \"%s\": %s" % (name,str(xt)))
+    assert x==expected_val #, ("Invalid value for scalar \"%s\"" % name)
 
 
 def check_1d_array(ar, name, sz, val):
@@ -100,9 +100,11 @@ def test_children(oar):
     oar["c2/d1"]=2
     oar["c2/d2"]=3
     oar["c3"]=4
-    childs = ar.list_children('/')
-    assert len(childs)==7, "Invalid number of children in /"
-    print type(childs)
+    childs = oar.list_children('/')
+    assert len(childs)==3
+    assert "c1" in childs
+    assert "c2" in childs
+    assert "c3" in childs
 
 def test_int(oar):
     oar["/int"]=9
