@@ -63,7 +63,7 @@ namespace alps {
         boost::python::object python_hdf5_load(alps::hdf5::archive & ar, std::string const & path) {
             import_numpy();
             boost::python::object value;
-            // ar[path] >> value;
+            ar[path] >> value;
             return value;
         }
         

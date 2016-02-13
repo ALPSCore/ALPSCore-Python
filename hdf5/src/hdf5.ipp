@@ -231,6 +231,7 @@ namespace alps {
             if (ar.is_group(path))
                 ar.delete_group(path);
             PyArrayObject * ptr = (PyArrayObject *)value.ptr();
+            /* A.G.: FIXME!!! BUG!!! The next statement fails by dereferencing NULL+0x10 */
             if (!PyArray_Check(ptr))
                 throw std::runtime_error("invalid numpy data" + ALPS_STACKTRACE);
             else if (!PyArray_ISNOTSWAPPED(ptr))
