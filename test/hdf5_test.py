@@ -34,58 +34,17 @@ def check_string(ar, name, expected_val):
 
 def check_1d_array(ar, name, sz, val):
     ext=ar.extent(name)
-    assert len(ext)==1, ("Invalid extent length for 1D-array \"%s\"" % name)
-    assert ext[0]==sz, ("Invalid extent value for 1D-array \"%s\"" % name)
+    assert len(ext)==1 #, ("Invalid extent length for 1D-array \"%s\"" % name)
+    assert ext[0]==sz #, ("Invalid extent value for 1D-array \"%s\"" % name)
     x=ar[name]
-    assert np.all(x==val), ("Invalid value for 1D-array \"%s\"" % name)
+    assert np.all(x==val) #, ("Invalid value for 1D-array \"%s\"" % name)
 
 def check_2d_array(ar, name, sz, val):
     ext=ar.extent(name)
-    assert len(ext)==2, ("Invalid extent length for 2D-array \"%s\"" % name)
-    assert ext[0]==sz[0] and ext[1]==sz[1], ("Invalid extent values for 2D-array \"%s\"" % name)
+    assert len(ext)==2 #, ("Invalid extent length for 2D-array \"%s\"" % name)
+    assert ext[0]==sz[0] and ext[1]==sz[1] #, ("Invalid extent values for 2D-array \"%s\"" % name)
     x=ar[name]
-    assert np.all(x==val), ("Invalid value for 2D-array \"%s\"" % name)
-
-
-# def check_read(ar):
-#     childs = ar.list_children('/')
-#     assert len(childs)==7, "Invalid number of children in /"
-
-#     assert not ar.is_complex("/int"), "Invalid complex detection"
-#     assert not ar.is_complex("/double"), "Invalid complex detection"
-#     assert ar.is_complex("/cplx"), "Invalid complex detection"
-
-#     check_scalar(ar,"/int",int,9)
-#     check_scalar(ar,"/double",float,9.125)
-#     check_scalar(ar,"/cplx",complex,complex(1,2))
-
-#     s = ar["/str"]
-#     assert type(s)==str, "Invalid type for string \"/str\""
-#     assert s=="test", "Invalid value for string \"/str\""
-
-#     check_1d_array(ar,"/np/int",3,np.array([1,2,3]))
-
-#     check_2d_array(ar,"/np/cplx", (2,2), np.array([[1 + 1j,2 +2j ],[3 + 3j,4 + 4j]]))
-#     check_2d_array(ar,"/np2/int", (3,3), np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
-
-# @pytest.fixture(scope="module")
-# def ar_filled(fname="py.h5"):
-#     oar = h5.archive(fname, 'w')
-#     oar["/int"] =  9
-#     oar["/double"] =  9.125
-#     oar["/cplx"] =  complex(1, 2)
-#     oar["/str"] =  "test"
-#     oar["/np/int"] =  np.array([1, 2, 3])
-#     oar["/np2/int"] =  np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-#     oar["/np/cplx"] =  np.array([[1 + 1j,2 +2j ],[3 + 3j,4 + 4j]])
-    
-#     oar.create_group("/my/group")
-#     oar["/my/double"] = 8.5
-    
-#     oar.delete_group("/my/group")
-#     oar.delete_data("/my/double")
-
-#     return oar
+    assert np.all(x==val) #, ("Invalid value for 2D-array \"%s\"" % name)
 
 
 def open_h5file(fname="py1.h5"):
@@ -153,6 +112,17 @@ def test_complex(oar):
     del oar
     check_scalar(iar(), "/cmplx", complex, complex(1.5,2.25))
 
+def test_complex_flag(oar):
+    oar["/cmplx"]=complex(1.5,2.25)
+    oar["/dble"]=3.125
+    assert oar.is_complex("/cmplx")
+    assert not oar.is_complex("/dble")
+    del oar
+    ar=iar()
+    assert ar.is_complex("/cmplx")
+    assert not ar.is_complex("/dble")
+
+
 def test_group(oar):
     oar.create_group("/my/group")
     clist=oar.list_children("/")
@@ -181,9 +151,30 @@ def test_deldata(oar):
     clist=ar.list_children("/my")
     assert len(clist)==0
     
-@pytest.mark.skipif(1,reason="Crashes")
 def test_np_intvec(oar):
     oar["/np/int"] = np.array([1, 2, 3])
+    check_1d_array(oar, "/np/int", 3, (1,2,3))
+    del oar
+    check_1d_array(iar(), "/np/int", 3, (1,2,3))
+
+def test_np_intmatrix(oar):
+    oar["/np2/int"] = np.array([[1,2],[3,4],[5,6]])
+    check_2d_array(oar, "/np2/int", (3,2), ((1,2),(3,4),(5,6)))
+    del oar
+    check_2d_array(iar(), "/np2/int", (3,2), ((1,2),(3,4),(5,6)))
+    
+def test_np_dblmatrix(oar):
+    oar["/np2/dbl"] = np.array([[1.5,2.5],[3.125,4.125],[5.25,6.25]])
+    check_2d_array(oar, "/np2/dbl", (3,2), ((1.5,2.5),(3.125,4.125),(5.25,6.25)))
+    del oar
+    check_2d_array(iar(), "/np2/dbl", (3,2), ((1.5,2.5),(3.125,4.125),(5.25,6.25)))
+    
+def test_np_complex_vector(oar):
+    oar["/np/cmplx"] = np.array([1+2j, 3+4j, 5+6j])
+    check_1d_array(oar, "/np/cmplx", 3, (1+2j, 3+4j, 5+6j))
+    del oar
+    check_1d_array(iar(), "/np/cmplx", 3, (1+2j, 3+4j, 5+6j))
+
 
 # DEBUG!
 #signal.signal(signal.SIGUSR1, sighandler)

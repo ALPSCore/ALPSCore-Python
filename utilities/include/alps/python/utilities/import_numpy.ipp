@@ -15,7 +15,7 @@
 namespace alps {
     namespace detail {
 
-        void import_numpy() {
+        static inline void import_numpy() {
             static bool initialized = false;
             if (!initialized) {
                 import_array();  

@@ -8,9 +8,11 @@
 
 #include <alps/config.hpp>
 
-namespace alps {
-    namespace detail {
+// namespace alps {
+//     namespace detail {
 
-        void import_numpy();
-    }
-}
+//         void import_numpy();
+//     }
+// }
+
+#include "import_numpy.ipp"
