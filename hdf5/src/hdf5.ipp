@@ -7,12 +7,10 @@
 #include "./hdf5.hpp"
 
 #include <alps/utilities/type_wrapper.hpp>
-#include "alps/python/utilities/import_numpy.hpp"
 #include "alps/python/utilities/get_numpy_type.hpp"
 #include "./detail/extract_from_pyobject.hpp"
 
 #include <boost/python/numeric.hpp>
-#include <numpy/arrayobject.h>
 
 namespace alps {
     namespace hdf5 {
@@ -226,12 +224,9 @@ namespace alps {
             , std::vector<std::size_t> chunk
             , std::vector<std::size_t> offset
         ) {
-            using ::alps::detail::import_numpy;
-            import_numpy();
             if (ar.is_group(path))
                 ar.delete_group(path);
             PyArrayObject * ptr = (PyArrayObject *)value.ptr();
-            /* A.G.: FIXME!!! BUG!!! The next statement fails by dereferencing NULL+0x10 */
             if (!PyArray_Check(ptr))
                 throw std::runtime_error("invalid numpy data" + ALPS_STACKTRACE);
             else if (!PyArray_ISNOTSWAPPED(ptr))
@@ -264,12 +259,10 @@ namespace alps {
             , std::vector<std::size_t> chunk
             , std::vector<std::size_t> offset
         ) {
-            using ::alps::detail::import_numpy;
-            import_numpy();
-            if (false);
-            #define ALPS_PYTHON_HDF5_LOAD_NUMPY(T)                                                                                                              \
-                else if (ar.is_datatype<scalar_type< T >::type>(path) && ar.is_complex(path) == has_complex_elements< T >::value)                               \
-                    detail::load_python_numeric< T >(ar, path, value, chunk, offset, ::alps::detail::get_numpy_type(alps::detail::type_wrapper< T >::type()));
+#define ALPS_PYTHON_HDF5_LOAD_NUMPY(T)                                  \
+            else if (ar.is_datatype<scalar_type< T >::type>(path) && ar.is_complex(path) == has_complex_elements< T >::value) \
+                detail::load_python_numeric< T >(ar, path, value, chunk, offset, ::alps::detail::get_numpy_type(alps::detail::type_wrapper< T >::type()));
+            if (false); // <-- so that `else` from the folowing macro works correctly
             ALPS_FOREACH_NATIVE_NUMPY_TYPE(ALPS_PYTHON_HDF5_LOAD_NUMPY)
             #undef ALPS_PYTHON_HDF5_LOAD_NUMPY
             else

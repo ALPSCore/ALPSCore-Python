@@ -16,7 +16,6 @@
 
 #include <alps/utilities/cast.hpp>
 #include <alps/utilities/stacktrace.hpp>
-#include "alps/python/utilities/import_numpy.hpp"
 
 #include <boost/scoped_ptr.hpp>
 

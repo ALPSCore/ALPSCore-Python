@@ -14,21 +14,17 @@
 #include <alps/utilities/cast.hpp>
 
 #include <alps/utilities/type_wrapper.hpp>
-#include "alps/python/utilities/import_numpy.hpp"
 #include "alps/python/utilities/get_numpy_type.hpp"
 
 #include <boost/python/list.hpp>
 #include <boost/python/dict.hpp>
 
 #include <boost/python/numeric.hpp>
-#include <numpy/arrayobject.h>
 
 namespace alps {
     namespace detail {
 
-        // TODO: move to file and use it in pyngshdf5
         template<typename T> void extract_from_pyobject(T & visitor, boost::python::object const & data) {
-            import_numpy();
             std::string dtype = data.ptr()->ob_type->tp_name;
             if (dtype == "bool") visitor(boost::python::extract<bool>(data)());
             else if (dtype == "int") visitor(boost::python::extract<int>(data)());

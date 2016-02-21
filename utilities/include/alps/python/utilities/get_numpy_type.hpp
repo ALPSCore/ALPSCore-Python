@@ -11,8 +11,6 @@
 // this must be first
 #include "alps/python/utilities/boost_python.hpp"
 
-#include "alps/python/utilities/import_numpy.hpp"
-
 #include <complex>
 
 #define ALPS_FOREACH_NATIVE_NUMPY_TYPE(CALLBACK)                                                                                                \

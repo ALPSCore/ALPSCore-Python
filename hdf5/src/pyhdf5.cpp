@@ -4,10 +4,15 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
 
-#define PY_ARRAY_UNIQUE_SYMBOL pyhdf5_PyArrayHandle
 
 // this must be first
 #include "alps/python/utilities/boost_python.hpp"
+
+#define PY_ARRAY_UNIQUE_SYMBOL pyhdf5_PyArrayHandle
+// CAUTION: if the following header is included in another compilation unit
+//          that DOES NOT call `import_array()`,
+//          then `NO_IMPORT_ARRAY` must be define-d.
+#include <numpy/arrayobject.h>
 
 #include <alps/hdf5/archive.hpp>
 #include <alps/hdf5/pair.hpp>
@@ -56,12 +61,10 @@ namespace alps {
         }
 
         void python_hdf5_save(alps::hdf5::archive & ar, std::string const & path, boost::python::object const & data) {
-            import_numpy();
             ar[path] = data;
         }
 
         boost::python::object python_hdf5_load(alps::hdf5::archive & ar, std::string const & path) {
-            import_numpy();
             boost::python::object value;
             ar[path] >> value;
             return value;
@@ -83,8 +86,8 @@ namespace alps {
     
         boost::array<PyObject *, 6> exception_type;
     
-        #define TRANSLATE_CPP_ERROR_TO_PYTHON(T, ID)                                                            \
-        void translate_ ## T (hdf5:: T const & e) {                                                             \
+#define TRANSLATE_CPP_ERROR_TO_PYTHON(T, ID)                            \
+        void translate_ ## T (hdf5:: T const & e) {                     \
             std::string message = std::string(e.what()).substr(0, std::string(e.what()).find_first_of('\n'));   \
             PyErr_SetString(exception_type[ID], const_cast<char *>(message.c_str()));                           \
         }
@@ -94,7 +97,7 @@ namespace alps {
         TRANSLATE_CPP_ERROR_TO_PYTHON(invalid_path, 3)
         TRANSLATE_CPP_ERROR_TO_PYTHON(path_not_found, 4)
         TRANSLATE_CPP_ERROR_TO_PYTHON(wrong_type, 5)
-
+        
         void register_exception_type(int id, boost::python::object type) {
             Py_INCREF(type.ptr());
             exception_type[id] = type.ptr();
@@ -103,6 +106,11 @@ namespace alps {
 }
 
 BOOST_PYTHON_MODULE(pyhdf5_c) {
+    // Initialize NumPy (must be done only once, at module load)
+    import_array();  
+    boost::python::numeric::array::set_module_and_type("numpy", "ndarray");
+    
+        
 
     // TODO: move to ownl cpp file and include everywhere
     boost::python::to_python_converter<
