@@ -4,48 +4,34 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
 
-/** @file pyobj_interface.hpp
-    @brief Interace with Python code (accessing Python objects).
-
-    @details This interface is intended to be lighter/simpler than
-    boost::python, and therefore less powerful; to be used when
-    dependence on boost::python is undesirable.
+/** @file pyobj_raii.hpp
+    @brief Defines a RAII-style wrapper around a `PyObject*`
 */
 
-#ifndef ALPS_PYTHON_UTILITIES_PYOBJ_INTERFACE_HPP_INCLUDED
-#define ALPS_PYTHON_UTILITIES_PYOBJ_INTERFACE_HPP_INCLUDED
 
-namespace alps {
-    namespace python {
+#ifndef ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_RAII_HPP_INCLUDED
+#define ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_RAII_HPP_INCLUDED
 
-        /// general Python exception
-        class pyexception : public std::runtime_error {
-            PyObject* pyerr_; ///< Borrowed reference to Python exception
+namespace alps { namespace python { namespace detail {
 
-            pyexception(const std::string& msg, PyObject* perr): std::runtime_error(msg), pyerr_(perr) {}
-            public:
+            // Because i want to avoid using boost::python (policy decision)
+            // and i am too lazy to write a proper reference-counting wrapper,
+            // here is a simple RAII-style Python object wrapper to decrement refcount on destruction.
 
-            /// Getter method: @returns borrowed reference to Python exception
-            PyObject* operator()() const { return pyerr_; } 
+            /// Constructed with a **new** Python object, decrements refcount on destruction
+            class pyobject_raii_type : boost::noncopyable {
+                PyObject* pyobj_;
+                public:
+                pyobject_raii_type(PyObject* po): pyobj_(po) {}
+                virtual ~pyobject_raii_type() { if pyobj_ Py_DECREF(pyobj_); }
+                PyObject* operator()() { return pyobj_; }
+            };
 
-            /// Throws the exception if a Python error has occurred, returns false otherwise
-            static bool raise_if_error(const std::string& msg)
-            {
-                PyObject* perr=PyErr_Occurred();
-                if (perr)
-                    throw pyexception(msg, perr);
-                else
-                    return false;
-            }
-        };
-
-
+        }
+    }
+}
       
-#undef ALPS_PYTHON_PARAMS_DETAILS_TR
+#endif // ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_RAII_HPP_INCLUDED
 
 
-      
-    } // end namespace python
-} // end namespace alps
 
-#endif // ALPS_PYTHON_UTILITIES_PYOBJ_INTERFACE_HPP_INCLUDED
