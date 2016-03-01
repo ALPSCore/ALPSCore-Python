@@ -4,12 +4,16 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
 
-/** @file pyobj_conversion_traits.hpp
+/** @file pyobj_conversion.hpp
     @brief Defines traits helping to convert a Python object to a C++ type
 */
 
-#ifndef ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_CONVERSION_TRAITS_HPP_INCLUDED
-#define ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_CONVERSION_TRAITS_HPP_INCLUDED
+#ifndef ALPS_PYTHON_UTILITIES_PYOBJ_CONVERSION_HPP_d293de47516944468bff515a28e5fb62
+#define ALPS_PYTHON_UTILITIES_PYOBJ_CONVERSION_HPP_d293de47516944468bff515a28e5fb62
+
+#include <cassert>
+#include <string>
+#include "alps/python/utilities/pyobj_interface.hpp"
 
 // conversion traits
 
@@ -19,14 +23,14 @@ namespace alps {
 
             // Call an integer function on a Python object, interpreting it as boolean
             template <int (*FN)(PyObject*)>
-            struct pyobj_check_predicate {
-                static bool check(PyObject* po) { return FN(po); }
+            struct pyobj_check_base {
+                static bool apply(PyObject* po) { return FN(po); }
             };
 
             // Call a conversion function on a Python object
             template <typename T, T (*CVT)(PyObject*)>
-            struct pyobj_conversion {
-                static T cast(PyObject* po)
+            struct pyobj_cast_base {
+                static T apply(PyObject* po)
                 {
                     T val=CVT(po);
                     if (val==T(-1)) pyexception::raise_if_error("Python type conversion error"); // FIXME: not very informative
@@ -35,27 +39,27 @@ namespace alps {
             };
         
             // Traits to verify that a python objects contains a given scalar type: generic
-            template <typename> struct pyobj_check_trait {};
+            template <typename> struct pyobj_check {};
 
             // Traits to provide a conversion from a (checked) python object to a scalar type: generic
-            template <typename> struct pyobj_cast_trait {};
+            template <typename> struct pyobj_cast {};
 
             // maps PyInt -> long
-            template <> struct pyobj_check_trait<long> : public pyobj_check_predicate<PyInt_Check> {};
-            template <> struct pyobj_cast_trait<long> : public pyobj_conversion<long,PyInt_AsLong> {};
+            template <> struct pyobj_check<long> : public pyobj_check_base<PyInt_Check> {};
+            template <> struct pyobj_cast<long> : public pyobj_cast_base<long,PyInt_AsLong> {};
 
             // maps PyLong -> long long
-            template <> struct pyobj_check_trait<long long> : public pyobj_check_predicate<PyLong_Check> {};
-            template <> struct pyobj_cast_trait<long long> : public pyobj_conversion<long long,PyLong_AsLongLong> {};
+            template <> struct pyobj_check<long long> : public pyobj_check_base<PyLong_Check> {};
+            template <> struct pyobj_cast<long long> : public pyobj_cast_base<long long,PyLong_AsLongLong> {};
 
             // maps PyFloat -> double
-            template <> struct pyobj_check_trait<double> : public pyobj_check_predicate<PyFloat_Check> {};
-            template <> struct pyobj_cast_trait<double> : public pyobj_conversion<double,PyFloat_AsDouble> {};
+            template <> struct pyobj_check<double> : public pyobj_check_base<PyFloat_Check> {};
+            template <> struct pyobj_cast<double> : public pyobj_cast_base<double,PyFloat_AsDouble> {};
 
             // maps PyBool -> bool
-            template <> struct pyobj_check_trait<bool> : public pyobj_check_predicate<PyBool_Check> {};
-            template <> struct pyobj_cast_trait<bool> {
-                static bool cast(PyObject* po)
+            template <> struct pyobj_check<bool> : public pyobj_check_base<PyBool_Check> {};
+            template <> struct pyobj_cast<bool> {
+                static bool apply(PyObject* po)
                 {
                     if (po==PyFalse) return false;
                     if (po==PyTrue) return true;
@@ -65,9 +69,9 @@ namespace alps {
             };
        
             // maps PyString -> std::string
-            template <> struct pyobj_check_trait<std::string> : public pyobj_check_predicate<PyString_Check> {};
-            template <> struct pyobj_cast_trait<std::string> {
-                static std::string cast(PyObject* po)
+            template <> struct pyobj_check<std::string> : public pyobj_check_base<PyString_Check> {};
+            template <> struct pyobj_cast<std::string> {
+                static std::string apply(PyObject* po)
                 {
                     char* buf=0; 
                     Py_ssize_t len=0; 
@@ -79,49 +83,44 @@ namespace alps {
                     return std::string(buf,len);
                 }
             };
-        
 
-            // to convert a (scalar) Python object to a type T
+            // checks if the Python sequence can be mapped to std::vector<T>
             template <typename T>
-            class pyobj_cast {
-                public:
-                static boost::optional<T> as(PyObject* pyobj) {
-                    if (!pyobj_check_trait<T>::check(pyobj)) return boost::none;
-                    return pyobj_cast_trait<T>::cast(pyobj);
+            struct pyobj_check< std::vector<T> > {
+                static bool apply(PyObject* po)
+                {
+                    pyseq_wrapper pyseq(po, pyseq_wrapper::DONT_THROW);
+                    if (!pyseq.ok()) return false;
+                    Py_ssize_t pyseq_sz=pyseq.size();
+
+                    for (Py_ssize_t i=0; i<pyseq_sz; ++i) {
+                        PyObject* pyitem=pyseq[i];
+                        if (!pyobj_check<T>::apply(pyitem)) return false;
+                    }
+                    return true;
                 }
             };
 
-            // to convert a Python sequence of same-type objects to a vector of T
+            // map the Python sequence to std::vector<T> (assuming `pyobj_check` was performed)
             template <typename T>
-            class pyobj_cast< std::vector<T> > {
-                public:
+            struct pyobj_cast< std::vector<T> > {
                 typedef std::vector<T> value_type;
-                typedef T element_type;
-    
-                static boost::optional<value_type> as(PyObject* po) {
-                    if (!PySequence_Check(po)) return boost::none;
-                    Py_ssize_t sz=PySequence_Size(po);
-                    assert(sz>=0 && "Unexpected failure of PySequence_Size()");
+                
+                static value_type apply(PyObject* po)
+                {
+                    pyseq_wrapper pyseq(po);
+                    Py_ssize_t pyseq_sz=pyseq.size();
+                    value_type ret_val(pyseq_sz);
 
-                    value_type ret_val(sz);
-                    pyobject_raii_type pyseq(PySequence_Fast(po,"Error converting PyObject to a tuple/list"));
-                    if (!pyseq()) {
-                        if (!pyexception::raise_if_error("Error convering sequence")) {
-                            throw logic_error("PySequence conversion failed without raising an exception");
-                        }
-                    }
-                    for (int i=0; i<sz; ++i) {
-                        PyObject* pyitem=PySeq_Fast_GET_ITEM(pyseq(), i);
-                        boost::optional<element_type> item=pyobj_cast<element_type>::cast(pyitem);
-                        if (!item) return boost::none;
-                        ret_val[i]=*item;
+                    for (Py_ssize_t i=0; i<pyseq_sz; ++i) {
+                        ret_val[i]=pyobj_cast<T>::apply(pyseq[i]);
                     }
                     return ret_val;
                 }
             };
-
+            
         } // ns detail
     } // ns python
 } // ns alps
 
-#undef //ALPS_PYTHON_UTILITIES_DETAIL_PYOBJ_CONVERSION_TRAITS_HPP_INCLUDED
+#undef //ALPS_PYTHON_UTILITIES_PYOBJ_TRAITS_HPP_d293de47516944468bff515a28e5fb62

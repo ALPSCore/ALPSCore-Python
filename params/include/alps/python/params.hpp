@@ -4,11 +4,8 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
 
-#ifndef ALPS_PYTHON_PARAMS_INCLUDED
-#define ALPS_PYTHON_PARAMS_INCLUDED
-
-// this must be first
-#include "alps/python/utilities/boost_python.hpp"
+#ifndef ALPS_PYTHON_PARAMS_HPP_7062c0890998417685d2444c5276371d
+#define ALPS_PYTHON_PARAMS_HPP_7062c0890998417685d2444c5276371d
 
 #include <alps/params.hpp>
 
@@ -21,4 +18,4 @@ namespace alps {
     }
 }
 
-#endif // ALPS_PYTHON_PARAMS_INCLUDED
+#endif /* ALPS_PYTHON_PARAMS_HPP_7062c0890998417685d2444c5276371d */
