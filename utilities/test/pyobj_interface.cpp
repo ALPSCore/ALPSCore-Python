@@ -10,6 +10,7 @@
 #include <alps/python/utilities/pyobj_interface.hpp>
 #include <alps/python/utilities/pyobj_conversion.hpp>
 #include <iostream>
+#include <algorithm>
 #include <boost/lexical_cast.hpp>
 
 /// Internal shortcut to boost::lexical_cast<string>()
@@ -69,7 +70,7 @@ static PyObject* single_arg(PyObject* args)
 }
  
 
-/// Check for boolean argument True; return "OK" or error message.
+/// Checks for boolean argument True; returns "OK" or error message.
 static PyObject* test_bool(PyObject* self, PyObject* args)
 {
     PyObject* obj=single_arg(args);
@@ -80,21 +81,163 @@ static PyObject* test_bool(PyObject* self, PyObject* args)
     return toPystring("OK");
 }
 
+/// Checks for integer argument 123; returns "OK" or error message.
+static PyObject* test_int(PyObject* self, PyObject* args)
+{
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+    
+    if (!apd::pyobj_check<long>::apply(obj)) return toPystring("Not integer");
+    const long expected=123;
+    long val=apd::pyobj_cast<long>::apply(obj);
+    if (expected != val) return toPystring("Expected " + toString(expected) + ", got "+toString(val));
+    return toPystring("OK");
+}
+
+/// Checks for long argument 456; returns "OK" or error message.
+static PyObject* test_long(PyObject* self, PyObject* args)
+{
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+    
+    if (!apd::pyobj_check<long long>::apply(obj)) return toPystring("Not long integer");
+    const long long expected=456;
+    long long val=apd::pyobj_cast<long long>::apply(obj);
+    if (expected != val) return toPystring("Expected " + toString(expected) + ", got "+toString(val));
+    return toPystring("OK");
+}
+
+/// Checks for float argument 43.25; returns "OK" or error message.
+static PyObject* test_float(PyObject* self, PyObject* args)
+{
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+    
+    if (!apd::pyobj_check<double>::apply(obj)) return toPystring("Not float");
+    const double expected=43.25;
+    double val=apd::pyobj_cast<double>::apply(obj);
+    if (expected != val) return toPystring("Expected " + toString(expected) + ", got "+toString(val));
+    return toPystring("OK");
+}
+
+/// Checks for string argument "Hello, world!"; returns "OK" or error message.
+static PyObject* test_string(PyObject* self, PyObject* args)
+{
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+    
+    if (!apd::pyobj_check<std::string>::apply(obj)) return toPystring("Not string");
+    const std::string expected="Hello, world!";
+    std::string val=apd::pyobj_cast<std::string>::apply(obj);
+    if (expected != val) return toPystring("Expected \"" + expected + "\", got \""+ val + "\"");
+    return toPystring("OK");
+}
+
+/// Checks for boolean sequence (True,False); returns "OK" or error message.
+static PyObject* test_vbool(PyObject* self, PyObject* args)
+{
+    typedef std::vector<bool> vtype;
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not boolean vector");
+    vtype val=apd::pyobj_cast<vtype>::apply(obj);
+    if (val.size()!=2) return toPystring("Wrong size: "+toString(val.size()));
+    if (!val[0]) return toPystring("Expected True as 1st element");
+    if ( val[1]) return toPystring("Expected False as 1st element");
+    return toPystring("OK");
+}
+
+/// Checks for integer sequence (123, 456); returns "OK" or error message.
+static PyObject* test_vint(PyObject* self, PyObject* args)
+{
+    typedef std::vector<long> vtype;
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    vtype val=apd::pyobj_cast<vtype>::apply(obj);
+    
+    const long expected[]={123, 456};
+    const std::size_t expected_size=sizeof(expected)/sizeof(*expected);
+    
+    if (expected_size!=val.size()) return toPystring("Wrong size: expected "+toString(expected_size)+", got "+toString(val.size()));
+    if (!std::equal(expected, expected+expected_size, val.begin())) {
+        return toPystring("Wrong vector");
+    }
+    return toPystring("OK");
+}
+
+/// Checks for long-integer sequence (456L, 123L); returns "OK" or error message.
+static PyObject* test_vlong(PyObject* self, PyObject* args)
+{
+    typedef std::vector<long long> vtype;
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    vtype val=apd::pyobj_cast<vtype>::apply(obj);
+    
+    const long long expected[]={456, 123};
+    const std::size_t expected_size=sizeof(expected)/sizeof(*expected);
+    
+    if (expected_size!=val.size()) return toPystring("Wrong size: expected "+toString(expected_size)+", got "+toString(val.size()));
+    if (!std::equal(expected, expected+expected_size, val.begin())) {
+        return toPystring("Wrong vector");
+    }
+    return toPystring("OK");
+}
+
+/// Checks for float sequence (43.25, 12.5); returns "OK" or error message.
+static PyObject* test_vfloat(PyObject* self, PyObject* args)
+{
+    typedef std::vector<double> vtype;
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    vtype val=apd::pyobj_cast<vtype>::apply(obj);
+    
+    const double expected[]={43.25, 12.5};
+    const std::size_t expected_size=sizeof(expected)/sizeof(*expected);
+    
+    if (expected_size!=val.size()) return toPystring("Wrong size: expected "+toString(expected_size)+", got "+toString(val.size()));
+    if (!std::equal(expected, expected+expected_size, val.begin())) {
+        return toPystring("Wrong vector");
+    }
+    return toPystring("OK");
+}
+
+/// Checks for string sequence ("Hello", "world!"); returns "OK" or error message.
+static PyObject* test_vstring(PyObject* self, PyObject* args)
+{
+    typedef std::vector<std::string> vtype;
+    PyObject* obj=single_arg(args);
+    if (!obj) return 0;
+
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    vtype val=apd::pyobj_cast<vtype>::apply(obj);
+    
+    const std::string expected[]={"Hello", "world!"};
+    const std::size_t expected_size=sizeof(expected)/sizeof(*expected);
+    
+    if (expected_size!=val.size()) return toPystring("Wrong size: expected "+toString(expected_size)+", got "+toString(val.size()));
+    if (!std::equal(expected, expected+expected_size, val.begin())) {
+        return toPystring("Wrong vector");
+    }
+    return toPystring("OK");
+}
+
+
+
+
 #define PYOBJ_TEST_DETAIL_DUMMY_FN(_name_)                              \
     static PyObject* _name_(PyObject*, PyObject*) {                     \
         PyErr_SetString(PyExc_NotImplementedError, #_name_ "() not implemented"); \
         return 0;                                                       \
     }
 
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_vbool)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_int)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_vint)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_long)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_vlong)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_float)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_vfloat)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_string)
-PYOBJ_TEST_DETAIL_DUMMY_FN(test_vstring)
+// PYOBJ_TEST_DETAIL_DUMMY_FN(test_vstring)
 
 #undef PYOBJ_TEST_DETAIL_DUMMY_FN
 
