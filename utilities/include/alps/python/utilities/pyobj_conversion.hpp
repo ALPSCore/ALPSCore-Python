@@ -13,27 +13,54 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
+
 #include "alps/python/utilities/pyobj_interface.hpp"
+
 
 // conversion traits
 
 namespace alps {
     namespace python {
         namespace detail {
-
-            // Call an integer function on a Python object, interpreting it as boolean
-            template <int (*FN)(PyObject*)>
-            struct pyobj_check_base {
-                static bool apply(PyObject* po) { return FN(po); }
+            // Python "functions" are in fact macros, so we wrap them into callable classes
+            // ...and store return type information too, while we are at it.
+#define MAKE_CHECK_CLASS_DETAIL(_name_, _checkfn_)                      \
+            struct _name_ { static bool apply(PyObject* po) { return _checkfn_(po); } };
+#define MAKE_CVT_CLASS_DETAIL(_name_, _cvtfn_, _type_)                  \
+            struct _name_ {                                             \
+                typedef _type_ value_type;                              \
+                static value_type apply(PyObject* po) { return _cvtfn_(po); } \
             };
 
-            // Call a conversion function on a Python object
-            template <typename T, T (*CVT)(PyObject*)>
+            MAKE_CHECK_CLASS_DETAIL(pyint_check, PyInt_Check)
+            MAKE_CHECK_CLASS_DETAIL(pylong_check, PyLong_Check)
+            MAKE_CHECK_CLASS_DETAIL(pyfloat_check, PyFloat_Check)
+            MAKE_CHECK_CLASS_DETAIL(pybool_check, PyBool_Check)
+            MAKE_CHECK_CLASS_DETAIL(pystring_check, PyString_Check)
+
+            MAKE_CVT_CLASS_DETAIL(pyint2long, PyInt_AsLong, long)
+            MAKE_CVT_CLASS_DETAIL(pylong2llong, PyLong_AsLongLong, long long)
+            MAKE_CVT_CLASS_DETAIL(pyfloat2double, PyFloat_AsDouble, double)
+
+#undef MAKE_CHECK_CLASS_DETAIL
+#undef MAKE_CVT_CLASS_DETAIL
+
+
+            // Apply check to a Python object, returning a boolean
+            template <typename F>
+            struct pyobj_check_base {
+                static bool apply(PyObject* po) { return F::apply(po); }
+            };
+
+            // Apply a conversion function to a Python object
+            template <typename F>
             struct pyobj_cast_base {
-                static T apply(PyObject* po)
+                typedef typename F::value_type value_type;
+                static value_type apply(PyObject* po)
                 {
-                    T val=CVT(po);
-                    if (val==T(-1)) pyexception::raise_if_error("Python type conversion error"); // FIXME: not very informative
+                    value_type val=F::apply(po);
+                    if (val==value_type(-1)) pyexception::raise_if_error("Python type conversion error"); // FIXME: not very informative
                     return val;
                 }
             };
@@ -44,32 +71,31 @@ namespace alps {
             // Traits to provide a conversion from a (checked) python object to a scalar type: generic
             template <typename> struct pyobj_cast {};
 
-            // maps PyInt -> long
-            template <> struct pyobj_check<long> : public pyobj_check_base<PyInt_Check> {};
-            template <> struct pyobj_cast<long> : public pyobj_cast_base<long,PyInt_AsLong> {};
+            template <> struct pyobj_check<long> : public pyobj_check_base<detail::pyint_check> {};
+            template <> struct pyobj_cast<long> : public pyobj_cast_base<detail::pyint2long> {};
 
             // maps PyLong -> long long
-            template <> struct pyobj_check<long long> : public pyobj_check_base<PyLong_Check> {};
-            template <> struct pyobj_cast<long long> : public pyobj_cast_base<long long,PyLong_AsLongLong> {};
+            template <> struct pyobj_check<long long> : public pyobj_check_base<detail::pylong_check> {};
+            template <> struct pyobj_cast<long long> : public pyobj_cast_base<detail::pylong2llong> {};
 
             // maps PyFloat -> double
-            template <> struct pyobj_check<double> : public pyobj_check_base<PyFloat_Check> {};
-            template <> struct pyobj_cast<double> : public pyobj_cast_base<double,PyFloat_AsDouble> {};
+            template <> struct pyobj_check<double> : public pyobj_check_base<detail::pyfloat_check> {};
+            template <> struct pyobj_cast<double> : public pyobj_cast_base<detail::pyfloat2double> {};
 
             // maps PyBool -> bool
-            template <> struct pyobj_check<bool> : public pyobj_check_base<PyBool_Check> {};
+            template <> struct pyobj_check<bool> : public pyobj_check_base<detail::pybool_check> {};
             template <> struct pyobj_cast<bool> {
                 static bool apply(PyObject* po)
                 {
-                    if (po==PyFalse) return false;
-                    if (po==PyTrue) return true;
+                    if (po==Py_False) return false;
+                    if (po==Py_True) return true;
                     // if we forgot to check the PyObject's type...
                     throw std::logic_error("Boolean PyObject is neither true nor false");
                 }
             };
        
             // maps PyString -> std::string
-            template <> struct pyobj_check<std::string> : public pyobj_check_base<PyString_Check> {};
+            template <> struct pyobj_check<std::string> : public pyobj_check_base<detail::pystring_check> {};
             template <> struct pyobj_cast<std::string> {
                 static std::string apply(PyObject* po)
                 {
@@ -119,8 +145,8 @@ namespace alps {
                 }
             };
             
-        } // ns detail
-    } // ns python
-} // ns alps
+        } // detail::
+    } // python::
+} // alps::
 
-#undef //ALPS_PYTHON_UTILITIES_PYOBJ_TRAITS_HPP_d293de47516944468bff515a28e5fb62
+#endif //ALPS_PYTHON_UTILITIES_PYOBJ_TRAITS_HPP_d293de47516944468bff515a28e5fb62

@@ -167,7 +167,7 @@ macro(make_python_module name)
   # C library implementing the module: 
   add_library(${target_} MODULE ${srcs_}) # ${CMAKE_SOURCE_DIR}/utilities/src/import_numpy.cpp)
   target_include_directories(${target_} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/  ${CMAKE_SOURCE_DIR}/utilities/include/ )
-  set_target_properties(${name}_c PROPERTIES PREFIX "")
+  set_target_properties(${target_} PROPERTIES PREFIX "")
   target_link_libraries(${target_} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} ${ALPSCore_LIBRARIES})
   list(APPEND python_c_targets ${target_})
   set(python_c_targets ${python_c_targets} PARENT_SCOPE)

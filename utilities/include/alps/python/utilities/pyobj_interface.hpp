@@ -13,6 +13,7 @@
 #define ALPS_PYTHON_UTILITIES_PYOBJ_INTERFACE_HPP_be3a2b9eb6ef487d8af28d8db786643a
 
 #include <cassert>
+#include <stdexcept>
 
 namespace alps {
     namespace python { 
@@ -64,7 +65,7 @@ namespace alps {
             }
 
             /// Assignment: takes the ownership of the copy, disowns the current wrapped PyObject
-            pyobj_wrapper& operator=(const pyobj_wrapper& rhs) {
+            pyobject_wrapper& operator=(const pyobject_wrapper& rhs) {
                 Py_XINCREF(rhs.pyobj_); // increment refcount first, in case of self-assignment
                 Py_XDECREF(this->pyobj_);
                 pyobj_=rhs.pyobj_;
@@ -90,10 +91,10 @@ namespace alps {
                     }
                     return; // leaves with default-initialized wrapped sequence
                 }
-                wrapped_seq_(PySequence_Fast(po,"Error converting PyObject to a tuple/list"));
+                wrapped_seq_=pyobject_wrapper(PySequence_Fast(po,"Error converting PyObject to a tuple/list"));
                 if (!wrapped_seq_()) {
                     if (!pyexception::raise_if_error("Error converting sequence")) {
-                        throw logic_error("PySequence conversion failed without raising an exception");
+                        throw std::logic_error("PySequence conversion failed without raising an exception");
                     }
                 }
             }
@@ -114,7 +115,7 @@ namespace alps {
             PyObject* operator[](Py_ssize_t idx)
             {
                 assert(wrapped_seq_() && "operator[] called on unitialized pyseq_wrapper");
-                PyObject* pyitem=PySeq_Fast_GET_ITEM(wrapped_seq_(), idx);
+                PyObject* pyitem=PySequence_Fast_GET_ITEM(wrapped_seq_(), idx);
                 return pyitem;
             }
 
