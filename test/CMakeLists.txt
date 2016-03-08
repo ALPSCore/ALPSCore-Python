@@ -6,7 +6,7 @@ set(tests hdf5)
 
 
 foreach (f_ ${tests})
-  add_pytest(${f_})
+  add_pytest(${f_} ${CMAKE_BINARY_DIR}/python)
 endforeach()
 
 # add_dependencies(pytest pypackage)

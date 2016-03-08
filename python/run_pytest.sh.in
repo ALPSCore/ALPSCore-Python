@@ -1,8 +1,0 @@
-#!/bin/sh
-if [ ".$PYTHONPATH" = . ]; then
-    PYTHONPATH='@CMAKE_CURRENT_BINARY_DIR@'
-else
-    PYTHONPATH="@CMAKE_CURRENT_BINARY_DIR@:$PYTHONPATH"
-fi
-export PYTHONPATH
-@PYTEST@ "$@"

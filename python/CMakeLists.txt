@@ -13,7 +13,7 @@ set(copy_stamp_file "${CMAKE_CURRENT_BINARY_DIR}/copy.stamp")
 set(module_stamp_file "${CMAKE_CURRENT_BINARY_DIR}/python.stamp")
 
 configure_file("setup.py.in" ${setup_file})
-configure_file("run_pytest.sh.in" "run_pytest.sh" @ONLY)
+# configure_file("run_pytest.sh.in" "run_pytest.sh" @ONLY)
 file(MAKE_DIRECTORY "${c_pydir}")
 file(GENERATE OUTPUT "${c_pydir}/__init__.py" CONTENT "")
 

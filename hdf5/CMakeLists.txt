@@ -1,1 +1,1 @@
-make_python_module(pyhdf5)
+make_python_module(NAME pyhdf5 USE_BOOST SRCDIR src/)

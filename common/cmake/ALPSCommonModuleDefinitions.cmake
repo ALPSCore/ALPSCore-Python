@@ -2,6 +2,8 @@
 # Provide common definitions for building alps modules 
 #
 
+include(CMakeParseArguments)
+
 # Disable in-source builds
 if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
     message(FATAL_ERROR "In source builds are disabled. Please use a separate build directory")
@@ -86,13 +88,19 @@ macro(add_testing)
   endif (Testing)
 endmacro(add_testing)
 
-function(add_pytest name)
+# add Python test, searching for modules in the specified dir
+function(add_pytest name dir)
   set(flags_)
   if(TestXMLOutput)
     set(flags_ "--junit-xml" "${name}.xml")
   endif()
+  # add_test(NAME ${name}
+  #          COMMAND ${CMAKE_BINARY_DIR}/python/run_pytest.sh ${flags_} ${CMAKE_CURRENT_SOURCE_DIR}/${name}_test.py)
   add_test(NAME ${name}
-           COMMAND ${CMAKE_BINARY_DIR}/python/run_pytest.sh ${flags_} ${CMAKE_CURRENT_SOURCE_DIR}/${name}_test.py)
+           COMMAND ${PYTEST} ${flags_} ${CMAKE_CURRENT_SOURCE_DIR}/${name}_test.py)
+  set_property(TEST ${name} 
+               PROPERTY ENVIRONMENT
+               "PYTHONPATH=${dir}")
 endfunction()
 
 
@@ -147,28 +155,61 @@ endfunction()
 # endfunction()
 
 
+# This is a helper function used by make_python_module macro
+# Sets up building a C-Python module
+# Adds the target to the PARENT-scoped variable
+# (that is, modifies the variable in the caller's scope)
+# arguments: NAME name VAR varname NO_BOOST|USE_BOOST [SRCDIR srcdir] sources...
+function(make_python_module_helper)
+  message("ARGS=${ARGV}")
+  CMAKE_PARSE_ARGUMENTS(_mk_pymod "USE_BOOST;NO_BOOST" "NAME;VAR;SRCDIR" "" ${ARGV})
+  message("_mk_pymod_USE_BOOST=${_mk_pymod_USE_BOOST} _mk_pymod_NAME=${_mk_pymod_NAME} _mk_pymod_VAR=${_mk_pymod_VAR}")
+  if (NOT _mk_pymod_NAME OR NOT _mk_pymod_VAR)
+    message(FATAL_ERROR "make_python_module(): usage: make_python_module NAME modname VAR varname USE_BOOST|NO_BOOST [SRCDIR srcdir] srcs...")
+  endif()
+  if (NOT _mk_pymod_NO_BOOST AND NOT _mk_pymod_USE_BOOST)
+    message(FATAL_ERROR "make_python_module():  either USE_BOOST or NO_BOOST must be used")
+  endif()
+  if (_mk_pymod_NO_BOOST AND _mk_pymod_USE_BOOST)
+    message(FATAL_ERROR "make_python_module():  USE_BOOST and NO_BOOST are mutually exclusive")
+  endif()
+  set(libs_ ${PYTHON_LIBRARIES} ${ALPSCore_LIBRARIES})
+  if (_mk_pymod_USE_BOOST)
+    find_package(Boost REQUIRED COMPONENTS python)
+    list(APPEND libs_ ${Boost_LIBRARIES})
+  endif()
+  set(srcdir_ ".")
+  if (_mk_pymod_SRCDIR)
+    set(srcdir_ ${_mk_pymod_SRCDIR})
+  endif()
+  
+  set(target_ ${_mk_pymod_NAME}_c)
+  set(srcs_ "")
+  foreach(src_   ${_mk_pymod_NAME}.cpp ${_mk_pymod_UNPARSED_ARGUMENTS})
+    list(APPEND srcs_ ${srcdir_}/${src_})
+  endforeach()
+
+  # C library implementing the module: 
+  add_library(${target_} MODULE ${srcs_})
+  target_include_directories(${target_} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/  ${CMAKE_SOURCE_DIR}/utilities/include/ )
+  set_target_properties(${target_} PROPERTIES PREFIX "")
+  target_link_libraries(${target_} ${libs_})
+  
+  list(APPEND ${_mk_pymod_VAR} ${target_})
+  set(${_mk_pymod_VAR} ${${_mk_pymod_VAR}} PARENT_SCOPE)
+endfunction()
 
 # This macro is to be used in CMake subdirs!
 # Sets up building a C-Python module
 # Adds the target to the **PARENT**-scoped variable `python_c_targets`
 # (that is, modifies the variable in the parent directory scope!)
-# arguments: name sources...
-macro(make_python_module name)
+# arguments: NAME name USE_BOOST|NO_BOOST [SRCDIR srcdir] sources...
+macro(make_python_module)
   # gen_documentation()
   if (DocumentationOnly)
     return()
   endif (DocumentationOnly)
-  find_package(Boost REQUIRED COMPONENTS python)
-  set(target_ ${name}_c)
-  set(srcs_ "")
-  foreach(src_    ${name}.cpp ${ARGN})
-    list(APPEND srcs_ src/${src_})
-  endforeach()
-  # C library implementing the module: 
-  add_library(${target_} MODULE ${srcs_}) # ${CMAKE_SOURCE_DIR}/utilities/src/import_numpy.cpp)
-  target_include_directories(${target_} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/  ${CMAKE_SOURCE_DIR}/utilities/include/ )
-  set_target_properties(${target_} PROPERTIES PREFIX "")
-  target_link_libraries(${target_} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} ${ALPSCore_LIBRARIES})
-  list(APPEND python_c_targets ${target_})
+  
+  make_python_module_helper(VAR python_c_targets ${ARGV}) 
   set(python_c_targets ${python_c_targets} PARENT_SCOPE)
 endmacro()
