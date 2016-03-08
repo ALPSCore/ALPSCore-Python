@@ -9,6 +9,10 @@
 #include "alps/python/utilities/boost_python.hpp"
 
 #define PY_ARRAY_UNIQUE_SYMBOL pyhdf5_PyArrayHandle
+
+// we should stop using any NumPy API that is depricated as of 1.7:
+// #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 // CAUTION: if the following header is included in another compilation unit
 //          that DOES NOT call `import_array()`,
 //          then `NO_IMPORT_ARRAY` must be define-d.
