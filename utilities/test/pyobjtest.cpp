@@ -144,7 +144,7 @@ static PyObject* test_vbool(PyObject* self, PyObject* args)
     vtype val=apd::pyobj_cast<vtype>::apply(obj);
     if (val.size()!=2) return toPystring("Wrong size: "+toString(val.size()));
     if (!val[0]) return toPystring("Expected True as 1st element");
-    if ( val[1]) return toPystring("Expected False as 1st element");
+    if ( val[1]) return toPystring("Expected False as 2nd element");
     return toPystring("OK");
 }
 
@@ -175,7 +175,7 @@ static PyObject* test_vlong(PyObject* self, PyObject* args)
     PyObject* obj=single_arg(args);
     if (!obj) return 0;
 
-    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not long vector");
     vtype val=apd::pyobj_cast<vtype>::apply(obj);
     
     const long long expected[]={456, 123};
@@ -195,7 +195,7 @@ static PyObject* test_vfloat(PyObject* self, PyObject* args)
     PyObject* obj=single_arg(args);
     if (!obj) return 0;
 
-    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not float vector");
     vtype val=apd::pyobj_cast<vtype>::apply(obj);
     
     const double expected[]={43.25, 12.5};
@@ -215,7 +215,7 @@ static PyObject* test_vstring(PyObject* self, PyObject* args)
     PyObject* obj=single_arg(args);
     if (!obj) return 0;
 
-    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not integer vector");
+    if (!apd::pyobj_check<vtype>::apply(obj)) return toPystring("Not string vector");
     vtype val=apd::pyobj_cast<vtype>::apply(obj);
     
     const std::string expected[]={"Hello", "world!"};
