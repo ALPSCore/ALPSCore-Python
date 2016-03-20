@@ -37,6 +37,15 @@ namespace alps {
                 else
                     return false;
             }
+
+            /// Throws the exception wrapping the specified Python exception
+            // FIXME: specialize so that it can raise only valid Python exceptions?
+            static void raise(PyObject* exc, const std::string& msg)
+            {
+                PyErr_SetString(exc, msg.c_str());
+                raise_if_error(msg);
+                throw std::logic_error("Can't happen: setting Python exception hasn't set exception condition!");
+            }
         };
 
         // Because we want to avoid using boost::python (by policy)

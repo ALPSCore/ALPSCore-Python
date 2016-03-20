@@ -47,3 +47,4 @@ add_testing()
 #gen_find_module(alps/utilities/boost_python.hpp HEADER_ONLY) 
 
 add_subdirectory("utilities/test")
+add_subdirectory("params/test")

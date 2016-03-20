@@ -4,11 +4,13 @@
  * For use in publications, see ACKNOWLEDGE.TXT
  */
 
+#include <Python.h>
+
 #include <string>
 #include <cassert>
 #include <boost/preprocessor/seq/transform.hpp>
 
-#include "alps/python/params/params.hpp"
+#include "alps/python/params.hpp"
 
 #include "alps/python/utilities/pyobj_supported_types.hpp"
 #include "alps/python/utilities/pyobj_conversion.hpp"
@@ -20,11 +22,12 @@ namespace alps {
             {
                 using alps::python::detail::pyobj_check;
                 using alps::python::detail::pyobj_cast;
-                using alps::python::detail::pyseq_wrapper;
+                using alps::python::pyseq_wrapper;
                 
                 // Check if it is a dictionary (or a map object)
-                if (PyMapping_Check(dict)) {
-                    throw std::runtime_error("A non-mapping object is passed to alps::params constructor");
+                if (!PyMapping_Check(dict)) {
+                    alps::python::pyexception::raise(PyExc_TypeError,
+                                                     "A non-mapping object is passed to alps::params constructor");
                 }
                 // Get list of key-value pairs
                 pyseq_wrapper items(PyMapping_Items(dict));
@@ -40,7 +43,7 @@ namespace alps {
                     }
                     std::string key=pyobj_cast<std::string>::apply(kvpair[0]);
 
-#define ALPS_DETAIL_TRY_TYPE(_typ_)                                     \
+#define ALPS_DETAIL_TRY_TYPE(_dummy_,_data_,_typ_)                      \
                     else if (pyobj_check<_typ_>::apply(kvpair[1])) {    \
                         _typ_ val=pyobj_cast<_typ_>::apply(kvpair[1]);  \
                         ret_param[key]=val;                             \

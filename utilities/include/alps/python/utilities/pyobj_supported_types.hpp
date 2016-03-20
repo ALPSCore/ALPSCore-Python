@@ -14,11 +14,11 @@
 #include <boost/preprocessor/seq/transform.hpp>
 
 // The C++ equivalents of scalar Python types we support
-#define ALPS_PYTHON_SUPPORTED_SCALAR_TYPES (bool)(long)(long long)(double)(std::string)
+#define ALPS_PYTHON_SUPPORTED_SCALAR_TYPES (bool)(long)(double)(std::string)
 
 #define ALPS_PYTHON_DETAIL_TR(dummy_,templ_,type_) templ_<type_>
 // The vectors of the supported scalar types
-#define ALPS_PYTHON_SUPPORTED_VECTOR_TYPES BOOST_PP_SEQ_TRANSFORM(ALPS_PYTHON_PARAMS_DETAIL_TR, \
+#define ALPS_PYTHON_SUPPORTED_VECTOR_TYPES BOOST_PP_SEQ_TRANSFORM(ALPS_PYTHON_DETAIL_TR, \
                                                                   std::vector, \
                                                                   ALPS_PYTHON_SUPPORTED_SCALAR_TYPES)
 #undef ALPS_PYTHON_DETAILS_TR
