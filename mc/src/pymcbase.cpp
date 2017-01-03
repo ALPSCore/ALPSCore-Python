@@ -15,7 +15,7 @@
 #include <alps/utilities/make_copy.hpp>
 
 #ifdef ALPS_HAVE_MPI
-    #include <boost/mpi.hpp>
+    #include <alps/utilities/mpi.hpp>
 #endif
 
 #include <boost/bind.hpp>
@@ -30,7 +30,7 @@ namespace alps {
         public:
 
              #ifdef ALPS_HAVE_MPI
-                pymcbase(boost::python::dict arg, std::size_t seed_offset = 42, boost::mpi::communicator = boost::mpi::communicator())
+                pymcbase(boost::python::dict arg, std::size_t seed_offset = 42, alps::mpi::communicator = alps::mpi::communicator())
                     // : mcbase(mcbase::parameters_type(arg), seed_offset)
                     : mcbase(mcbase::parameters_type(), seed_offset)
                 {}
@@ -85,7 +85,7 @@ BOOST_PYTHON_MODULE(pymcbase_c) {
     boost::python::class_<alps::pymcbase, boost::noncopyable>(
           "mcbase",
           #ifdef ALPS_HAVE_MPI
-              boost::python::init<boost::python::dict, boost::python::optional<std::size_t, boost::mpi::communicator> >()
+              boost::python::init<boost::python::dict, boost::python::optional<std::size_t, alps::mpi::communicator> >()
           #else
               boost::python::init<boost::python::dict, boost::python::optional<std::size_t> >()
           #endif
