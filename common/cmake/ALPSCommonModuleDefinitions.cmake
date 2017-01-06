@@ -75,7 +75,7 @@ macro(add_testing)
   option(Testing "Enable testing" ON)
   option(TestXMLOutput "Generate XML-formatted test results" OFF)
   if (Testing)
-    find_file(PYTEST "py.test" DOC "Location of py.test executable")
+    find_file(PYTEST "py.test" PATHS $ENV{PYTEST} DOC "Location of py.test executable")
     if(NOT PYTEST)
       message(SEND_ERROR "
         The testing is enabled,

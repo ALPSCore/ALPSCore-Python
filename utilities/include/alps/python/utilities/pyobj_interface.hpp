@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <string>
 
 namespace alps {
     namespace python { 
