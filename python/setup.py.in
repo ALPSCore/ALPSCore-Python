@@ -21,6 +21,6 @@ setup(name='ALPSCore-Python',
           'Topic :: Scientific/Engineering :: Physics',
           'Topic :: Software Development :: Libraries'],
           
-      package_data={'alps.alps_c': ['*${CMAKE_SHARED_LIBRARY_SUFFIX}']},
+      package_data={'alps.alps_c': ['*.so']},
       packages=['alps','alps.alps_c'])
 
